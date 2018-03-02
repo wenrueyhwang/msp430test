@@ -227,4 +227,4 @@ __attribute__((interrupt(PORT1_VECTOR))) void port1_isr(void)
         /* Toggle the blink enable */
         _blink_enable ^= 1;
     }
-}        
+}
