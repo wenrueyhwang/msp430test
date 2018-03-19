@@ -65,7 +65,7 @@ int timer_init(void)
     memset(_timer, 0, sizeof(_timer));
 
     /* Set timer to use SMCLK, clock divider 2, up-mode */
-    TA1CTL = TASSEL1 | ID0 | MC0;
+    TA1CTL = TASSEL_2 | ID_1 | MC_1;
 
     /* TA1CCR0 set to the interval for the desires resolution based on 1MHz SMCLK */
     TA1CCR0 = (((1000000 / 2) / 1000) * TIMER_RESOLUTION_MS) - 1;
@@ -119,11 +119,11 @@ int timer_create(uint16_t timeout_ms, int periodic, void (*callback)(void *), vo
 
         _timer[i].callback = callback;
         _timer[i].arg = arg;
-        _timer[i].expiry = _timer_tick + _timer[i].periodic; 
+        _timer[i].expiry = _timer_tick + _timer[i].periodic;
 
         EXIT_CRITICAL();
         handle = i;
-    } 
+    }
 
     return handle;
 }
@@ -164,7 +164,7 @@ int timer_capture(struct time *time)
         uint32_t ms;
 
         /* Toggle the capture input select to trigger a capture event */
-        TA1CCTL1 ^= 0x1000;
+        TA1CCTL1 ^= CCIS_1;
 
         /**
          * Wait for the capture to complete
@@ -173,7 +173,7 @@ int timer_capture(struct time *time)
 
         /* Save the number of ms from the timer tick */
         ms = (uint32_t) _capture_tick * 100;
-        
+
         /* Save captured timer value in ms */
         ms += ((uint32_t) _capture_ta1ccr1 * 2) / 1000;
 
@@ -188,7 +188,7 @@ int timer_capture(struct time *time)
 
         err = 0;
     }
-    
+
     return err;
 }
 
@@ -199,7 +199,7 @@ __attribute__((interrupt(TIMER1_A0_VECTOR))) void timer1_isr(void)
     /* Clear the interrupt flag */
     TA1CCTL0 &= ~CCIFG;
 
-    /* Increment the timer tick */ 
+    /* Increment the timer tick */
     _timer_tick++;
 
     for (i = 0; i < MAX_TIMERS; i++) {

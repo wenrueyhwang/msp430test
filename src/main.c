@@ -6,13 +6,13 @@
  * Copyright (c) 2015, simplyembedded.org
  *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without 
  * modification, are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice, 
  *    this list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
@@ -37,21 +37,26 @@
 #include "uart.h"
 #include "i2c.h"
 #include "defines.h"
-#include <stddef.h>
-#include <string.h>
+
+#include <stddef.h> /* for size_t */
+#include <string.h> /* for memset() */
 #include <msp430.h>
 
 static volatile int _blink_enable = 0;
 static uint16_t _timer_ms = 0;
 
 static char *_uint_to_ascii(unsigned int value);
-static void blink_led(void *arg);
+static void blink_led(void *arg); 
 static int set_blink_freq(void);
 static int stopwatch(void);
 static int eeprom_read(void);
 static int eeprom_write(void);
 
-static const struct menu_item main_menu[] = 
+/*
+static uint16_t show_checksum(uint16_t *address, size_t len);
+*/
+
+static const struct menu_item main_menu[] =
 {
     {"Set LED blinking frequency", set_blink_freq},
     {"Stopwatch", stopwatch},
@@ -64,49 +69,89 @@ int main(int argc, char *argv[])
     (void) argc;
     (void) argv;
 
+
     if (board_init() == 0) {
         int timer_handle = -1;
 
-        uart_puts("\n**********************************************");
-        uart_puts("\nSimply Embedded tutorials for MSP430 Launchpad");
-        uart_puts("\nsimplyembedded.org");
-        uart_puts("\nVersion: 0.12.1");
-        uart_puts("\n"__DATE__);
-        uart_puts("\n**********************************************");
+/* to debug tlv code */
+/*
+	uart_puts("\nTo debug the TLV code of 31 words :  ");
+	uart_puts(_uint_to_ascii(show_checksum((uint16_t*)0x10c2, 62)));
+	uart_puts("\nTLV_CHECKSUM = ");
+	uart_puts(_uint_to_ascii(TLV_CHECKSUM));
+	uart_puts("\nPlease hit any key...");
+	while(uart_getchar() == -1){
+		watchdog_pet();
+	}
+
+*/
+/* end of tlv code */
+
+        uart_puts("\n***************************************************");
+        uart_puts("\n**\tSimply Embedded for MSP430 Launchpad\t**");
+        uart_puts("\n**\tsimplyembedded.org\t\t\t**");
+        uart_puts("\n**\tVersion: 0.12.1\t\t\t\t**");
+        uart_puts("\n**\tToday:"__DATE__" Time:"__TIME__"\t\t**");
+        uart_puts("\n***************************************************");
 
         menu_init(main_menu, ARRAY_SIZE(main_menu));
-        
+
         while (1) {
             watchdog_pet();
             menu_run();
-      
+
             /**
-             * If blinking is enabled and the timer handle is 
+             * If blinking is enabled and the timer handle is
              * negative (invalid) create a periodic timer
              */
             if (_blink_enable != 0 ) {
                 if (timer_handle < 0) {
-                    timer_handle = timer_create(_timer_ms, 1, blink_led, NULL); 
+                    timer_handle = timer_create(_timer_ms, 1, blink_led, NULL);
                 }
             } else {
                 if (timer_handle != -1) {
                     timer_delete(timer_handle);
                     timer_handle = -1;
                 }
-            }
-        }
-    }
+            } /* outside if statement */
+        } /* while() loop */
+    } /* if board_init() */
 
     return 0;
 }
+
+/*
+static uint16_t show_checksum(uint16_t *data, size_t len)
+{
+	uint16_t crc = 0;
+	size_t i = 0;
+
+	len = len/2;
+	while(len-- >0){
+		uart_puts("\nTLV content[");
+		uart_puts(_uint_to_ascii(i));
+		uart_puts("]=");
+		i++;
+		uart_puts(_uint_to_ascii(*data));
+		crc ^= *(data++);
+	}
+	uart_puts("\nCRC = ");
+	return crc;
+}
+*/
+
+
 
 static void blink_led(void *arg)
 {
     (void) arg;
 
-    /* Toggle P1.0 output */
-    P1OUT ^= 0x01;
+	/* Toggle P1OUT BIT0 */
+
+    P1OUT ^= BIT0;
 }
+
+
 
 static int set_blink_freq(void)
 {
@@ -123,21 +168,23 @@ static int stopwatch(void)
 {
     struct time start_time;
     struct time end_time;
-    
+
     uart_puts("\nPress any key to start/stop the stopwatch: ");
-    
+
     /* Wait to start */
     while (uart_getchar() == -1) {watchdog_pet();}
-    
+
     if (timer_capture(&start_time) == 0) {
         uart_puts("\nRunning...");
 
         /* Wait to stop */
-        while (uart_getchar() == -1) {watchdog_pet();}
-        
+        while (uart_getchar() == -1) {
+		watchdog_pet();
+	}
+
         if (timer_capture(&end_time) == 0) {
             unsigned int sec = end_time.sec - start_time.sec;
-            unsigned int ms = end_time.ms - start_time.ms;            
+            unsigned int ms = end_time.ms - start_time.ms;
 
             /* Display the result */
             uart_puts("\nTime: ");
@@ -155,12 +202,12 @@ static int eeprom_read(void)
 {
     int err;
     struct i2c_device dev;
-    struct i2c_data data;    
+    struct i2c_data data;
     uint8_t rx_data[1];
     uint8_t address;
 
     dev.address = 0x50;
-    
+
     address = (uint8_t) menu_read_uint("Enter the address to read: ");
 
     data.tx_buf = &address;
@@ -183,11 +230,11 @@ static int eeprom_write(void)
 {
     int err;
     struct i2c_device dev;
-    struct i2c_data data;    
+    struct i2c_data data;
     uint8_t write_cmd[2];
 
     dev.address = 0x50;
-    
+
     write_cmd[0] = menu_read_uint("Enter the address to write: ");
     write_cmd[1] = menu_read_uint("Enter the data to write: ");
 
@@ -220,9 +267,9 @@ static char *_uint_to_ascii(unsigned int value)
 
 __attribute__((interrupt(PORT1_VECTOR))) void port1_isr(void)
 {
-    if (P1IFG & 0x8) {
+    if (P1IFG & BIT3) {
         /* Clear the interrupt flag */
-        P1IFG &= ~0x8;
+        P1IFG &= ~BIT3;
 
         /* Toggle the blink enable */
         _blink_enable ^= 1;

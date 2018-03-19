@@ -53,7 +53,7 @@ int board_init(void)
         /*  Calibration data is corrupted...hang */
         while(1);
     }
-    
+
     /* Configure the clock module - MCLK = 1MHz */
     DCOCTL = 0;
     BCSCTL1 = CALBC1_1MHZ;
@@ -69,30 +69,30 @@ int board_init(void)
     }
 
     /* Configure P1.0 as digital output */
-    P1SEL &= ~0x01;
-    P1DIR |= 0x01;
+    P1SEL &= ~BIT0; 	/* 0x01; */
+    P1DIR |= BIT0; 	/* 0x01; */
 
     /* Set P1.0 output high */
-    P1OUT |= 0x01;
+    P1OUT |= BIT0; 	/* 0x01; */
 
     /* Configure P1.3 to digital input */
-    P1SEL &= ~0x08;
-    P1SEL2 &= ~0x08;
-    P1DIR &= ~0x08;
+    P1SEL &= ~BIT3;	/* 0x08; */
+    P1SEL2 &= ~BIT3;	/* 0x08; */
+    P1DIR &= ~BIT3;	/* 0x08; */
 
     /* Pull-up required for rev 1.5 Launchpad */
-    P1REN |= 0x08;
-    P1OUT |= 0x08;
-    
+    P1REN |= BIT3; 	/* 0x08; */
+    P1OUT |= BIT3;	/* 0x08; */
+
     /* Set P1.3 interrupt to active-low edge  */
-    P1IES |= 0x08;
+    P1IES |= BIT3; 	/* 0x08; */
 
     /* Enable interrupt on P1.3 */
-    P1IE |= 0x08;
+    P1IE |= BIT3; 	/* 0x08; */
 
     /* Configure P1.1 and P1.2 for UART (USCI_A0) */
-    P1SEL |= 0x6;
-    P1SEL2 |= 0x6;
+    P1SEL |= BIT1 + BIT2; 	/* 0x6; */
+    P1SEL2 |= BIT1 + BIT2;	/* 0x6; */
 
     /* Configure P1.6 and P1.7 for I2C */
     P1SEL  |= BIT6 + BIT7;
@@ -100,9 +100,9 @@ int board_init(void)
 
     /* Global interrupt enable */
     __enable_interrupt();
- 
+
     watchdog_enable();
-    
+
     /* Initialize UART to 9600 baud */
     config.baud = 9600;
 

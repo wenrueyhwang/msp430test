@@ -5,11 +5,11 @@
 
 #include <msp430.h>
 
-static volatile unsigned _blinking;
+/* static volatile int _blinking; */
 
 void main(void)
 {
-	_blinking = 0;
+	/* _blinking = 0; */
 
 	WDTCTL = WDTPW + WDTHOLD; /* TO STOP WATCHDOG */
 	P1DIR |= BIT6; /* setting P1.6 as an output of green LED */
@@ -21,19 +21,20 @@ void main(void)
 
 	_bis_SR_register(LPM4_bits + GIE); /* Enter LPM4 W/ interrupt */
 
+/*
 	while(_blinking > 0)
 	{
 		P1OUT ^= BIT6;
-		__delay_cycles(5000); 
+		__delay_cycles(5000);
 	}
-
+*/
 	_no_operation(); /* for debugger */
 }
 __attribute__((interrupt(PORT1_VECTOR))) void Port_1(void)
 {
-	_blinking ^= 1;
+/*	_blinking ^= 1; */
 
-/*	P1OUT ^= BIT6; */
+	P1OUT ^= BIT6;
 
 	P1IFG &= ~BIT3;
 }

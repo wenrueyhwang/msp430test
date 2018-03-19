@@ -50,7 +50,7 @@ static const struct baud_value _baud_tbl[] = {
     {9600, 104, 0, 0x2}
 };
 
-/* RX ring bufer */
+/* RX ring buffer */
 static rbd_t _rbd;
 static char _rbmem[8];
 
@@ -84,9 +84,10 @@ int uart_init(uart_config_t *config)
             UCA0BR0 = _baud_tbl[i].UCAxBR0;
             UCA0BR1 = _baud_tbl[i].UCAxBR1;
             UCA0MCTL = _baud_tbl[i].UCAxMCTL;
-                           
+
             /* Initialize the ring buffer */
-            if (ring_buffer_init(&_rbd, &attr) == 0) {                 
+            if (ring_buffer_init(&_rbd, &attr) == 0)
+	    {
                 /* Enable the USCI peripheral (take it out of reset) */
                 UCA0CTL1 &= ~UCSWRST;
 
@@ -109,7 +110,7 @@ int uart_getchar(void)
 {
     int retval = -1;
     char c = -1;
-    
+
     if (ring_buffer_get(_rbd, &c) == 0) {
         retval = (int) c;
     }
@@ -125,11 +126,11 @@ int uart_getchar(void)
 int uart_putchar(int c)
 {
     /* Wait for the transmit buffer to be ready */
-    while (!(IFG2 & UCA0TXIFG));
+    while (!(IFG2 & UCA0TXIFG)); /* until UCA0TXIFG == 1 */
 
     /* Transmit data */
-    UCA0TXBUF = (char ) c; 
-    
+    UCA0TXBUF = (char ) c; /* Put c to UCA0TXBUF */
+
     return 0;
 }
 
@@ -149,7 +150,7 @@ int uart_puts(const char *str)
             while (!(IFG2 & UCA0TXIFG));
 
             /* Transmit data */
-            UCA0TXBUF = *str; 
+            UCA0TXBUF = *str;
 
             /*  If there is a line-feed, add a carriage return */
             if (*str == '\n') {
@@ -169,7 +170,7 @@ __attribute__((interrupt(USCIAB0RX_VECTOR))) void rx_isr(void)
 {
     if (IFG2 & UCA0RXIFG) {
         const char c = UCA0RXBUF;
-        
+
         /* Clear the interrupt flag */
         IFG2 &= ~UCA0RXIFG;
 

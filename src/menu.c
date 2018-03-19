@@ -33,6 +33,7 @@
 #include "menu.h"
 #include "uart.h"
 #include "watchdog.h"
+
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -56,6 +57,23 @@ void menu_init(const struct menu_item *menu, size_t count)
 
     _current_menu = menu;
     _current_menu_size = count;
+
+/* check the main menu */
+/*
+	size_t index = 0;
+	uart_puts("\nShow the total items of menu:");
+	while (count--) {
+        	static char option[] = "\n0. ";
+        	option[1] = '1' + index++;
+        	uart_puts(option);
+        	uart_puts(menu->text);
+        	menu++;
+    	}
+	while(uart_getchar() == -1){
+		watchdog_pet();
+	}
+*/
+/* end of checking */
 
     display_menu();
 }
@@ -81,7 +99,7 @@ void menu_run(void)
                     uart_puts("\nError\n");
                 }
             }
-        } else {    
+        } else {
             uart_puts("\nInvalid selection\n");
         }
 
@@ -101,14 +119,14 @@ void menu_run(void)
 unsigned int menu_read_uint(const char *prompt)
 {
     unsigned int value = 0;
- 
+
     uart_puts(prompt);
-    
+
     while (1) {
         int c = uart_getchar();
 
         watchdog_pet();
-     
+
         if ((c >= '0') && (c <= '9')) {
             value *= 10;
             value += c - '0';
